@@ -24,8 +24,9 @@ const SharedFolder = () => {
   }, []);
 
   const fetchServerInfo = async () => {
+    setIsLoading(true);
     try {
-      const response = await fetch(`${API_URL}/server-info`);
+      const response = await fetch(`${API_URL}/files/server-info`);
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
@@ -33,6 +34,8 @@ const SharedFolder = () => {
       setServerInfo(data);
     } catch (err) {
       console.error('Failed to fetch server info:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 

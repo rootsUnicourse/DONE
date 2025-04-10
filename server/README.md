@@ -57,11 +57,20 @@ Watching shared folder: /path/to/your/shared_folder
 
 The server provides the following endpoints:
 
+### File Operations
+
 - `GET /api/files` - Get a list of all files
 - `POST /api/files/upload` - Upload a file
 - `DELETE /api/files/:id` - Delete a file by ID
 - `GET /api/files/download/:id` - Download a file by ID
-- `GET /api/server-info` - Get server information
+- `GET /api/files/server-info` - Get server information
+
+### VMware Operations
+
+- `POST /api/vmware/start` - Start a VM (requires vmName in request body)
+- `POST /api/vmware/stop` - Stop a VM (requires vmName in request body)
+- `GET /api/vmware/status` - Get VM status (requires vmName as query parameter)
+- `GET /api/vmware` - Get list of all configured VMs
 
 ## Client Integration
 

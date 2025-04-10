@@ -6,7 +6,7 @@ const VMWARE_PATHS = {
   vmrun: "C:\\Program Files (x86)\\VMware\\VMware Workstation\\vmrun.exe",
   // Map VM names to their .vmx file paths
   vms: {
-    "DoneVmCrowdStrike": "C:\\Path\\To\\DoneVmCrowdStrike\\DoneVmCrowdStrike.vmx",
+    "DoneVmCrowdStrike": "C:\\Users\\danel\\Documents\\Virtual Machines\\DoneVmCrowdStrike\\DoneVmCrowdStrike.vmx",
     // Add other VMs here
   }
 };
