@@ -125,10 +125,26 @@
   cursor: pointer;
   transition: background-color 0.2s;
   font-size: 14px;
+  position: relative;
 }
 
 .file-item:hover {
   background-color: #f5f5f5;
+}
+
+.file-item:hover::after {
+  content: "Double-click to download";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  color: #888;
+  opacity: 0.8;
+}
+
+.file-item.selected:hover::after {
+  content: "";
 }
 
 .file-item.selected {
@@ -184,4 +200,32 @@
 .refresh-btn:disabled {
   color: #888;
   cursor: not-allowed;
+}
+
+.error-message {
+  padding: 20px;
+  text-align: center;
+  color: #d32f2f;
+}
+
+.error-message p {
+  margin-bottom: 15px;
+}
+
+.loading-message {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  font-style: italic;
+}
+
+.empty-folder {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  font-style: italic;
+}
+
+.download-btn {
+  color: #1976d2;
 } 

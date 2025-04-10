@@ -2,16 +2,56 @@ import React, { useState, useEffect } from 'react';
 import './SharedFolder.css';
 
 const SharedFolder = () => {
-  const [files, setFiles] = useState([
-    { id: 1, name: 'config.json', type: 'json', size: '2.3 KB', dateModified: '2023-04-10' },
-    { id: 2, name: 'vm-setup.sh', type: 'sh', size: '4.1 KB', dateModified: '2023-04-05' },
-    { id: 3, name: 'README.md', type: 'md', size: '1.8 KB', dateModified: '2023-04-02' },
-    { id: 4, name: 'data.csv', type: 'csv', size: '8.5 KB', dateModified: '2023-04-08' }
-  ]);
-  
+  const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [serverInfo, setServerInfo] = useState(null);
   
+  const API_URL = 'http://localhost:3001/api'; // Updated API URL for the new server
+
+  // Fetch files on component mount and set up polling
+  useEffect(() => {
+    fetchFiles();
+    fetchServerInfo();
+    
+    // Poll for file changes every 5 seconds
+    const intervalId = setInterval(fetchFiles, 5000);
+    
+    // Clean up interval on component unmount
+    return () => clearInterval(intervalId);
+  }, []);
+
+  const fetchServerInfo = async () => {
+    try {
+      const response = await fetch(`${API_URL}/server-info`);
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+      const data = await response.json();
+      setServerInfo(data);
+    } catch (err) {
+      console.error('Failed to fetch server info:', err);
+    }
+  };
+
+  const fetchFiles = async () => {
+    try {
+      const response = await fetch(`${API_URL}/files`);
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+      const data = await response.json();
+      setFiles(data);
+      setIsLoading(false);
+    } catch (err) {
+      console.error('Failed to fetch files:', err);
+      setError('Failed to load files. Please check if the server is running.');
+      setIsLoading(false);
+    }
+  };
+
   const getFileIcon = (fileType) => {
     switch(fileType) {
       case 'json': return '📄';
@@ -20,7 +60,10 @@ const SharedFolder = () => {
       case 'csv': return '📊';
       case 'txt': return '📄';
       case 'pdf': return '📑';
-      case 'img': case 'png': case 'jpg': return '🖼️';
+      case 'img': case 'png': case 'jpg': case 'jpeg': case 'gif': return '🖼️';
+      case 'js': case 'jsx': return '📜';
+      case 'html': case 'htm': return '🌐';
+      case 'css': return '🎨';
       default: return '📁';
     }
   };
@@ -29,41 +72,88 @@ const SharedFolder = () => {
     setSelectedFile(selectedFile?.id === file.id ? null : file);
   };
   
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     e.preventDefault();
+    const fileInput = document.getElementById('file-upload');
+    if (fileInput.files.length === 0) return;
+    
     setIsUploading(true);
     
-    // Simulate file upload
-    setTimeout(() => {
-      const fileInput = document.getElementById('file-upload');
-      if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        const fileType = file.name.split('.').pop();
-        
-        const newFile = {
-          id: files.length + 1,
-          name: file.name,
-          type: fileType,
-          size: `${(file.size / 1024).toFixed(1)} KB`,
-          dateModified: new Date().toLocaleDateString('en-US')
-        };
-        
-        setFiles([...files, newFile]);
-        fileInput.value = '';
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    
+    try {
+      const response = await fetch(`${API_URL}/files/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
       }
       
+      // Fetch the updated file list
+      await fetchFiles();
+      fileInput.value = '';
+    } catch (err) {
+      console.error('Failed to upload file:', err);
+      setError('Failed to upload file. Please try again.');
+    } finally {
       setIsUploading(false);
-    }, 1500);
+    }
   };
   
-  const handleFileDelete = () => {
-    if (selectedFile) {
-      if (window.confirm(`Are you sure you want to delete ${selectedFile.name}?`)) {
-        setFiles(files.filter(file => file.id !== selectedFile.id));
+  const handleFileDelete = async () => {
+    if (!selectedFile) return;
+    
+    if (window.confirm(`Are you sure you want to delete ${selectedFile.name}?`)) {
+      try {
+        const response = await fetch(`${API_URL}/files/${selectedFile.id}`, {
+          method: 'DELETE',
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status}`);
+        }
+        
+        // Update the file list
+        await fetchFiles();
         setSelectedFile(null);
+      } catch (err) {
+        console.error('Failed to delete file:', err);
+        setError('Failed to delete file. Please try again.');
       }
     }
   };
+
+  const handleFileDownload = async (file) => {
+    try {
+      window.open(`${API_URL}/files/download/${file.id}`, '_blank');
+    } catch (err) {
+      console.error('Failed to download file:', err);
+      setError('Failed to download file. Please try again.');
+    }
+  };
+
+  const handleRefresh = () => {
+    setIsLoading(true);
+    fetchFiles();
+    fetchServerInfo();
+  };
+  
+  if (error) {
+    return (
+      <div className="shared-folder-container">
+        <div className="folder-header">
+          <h3>Shared VM Folder</h3>
+        </div>
+        <div className="error-message">
+          <p>{error}</p>
+          <button onClick={handleRefresh} className="refresh-btn">Try Again</button>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="shared-folder-container">
@@ -76,18 +166,28 @@ const SharedFolder = () => {
               type="file" 
               id="file-upload" 
               onChange={handleFileUpload}
-              disabled={isUploading}
+              disabled={isUploading || isLoading}
               style={{ display: 'none' }}
             />
           </label>
           
           <button 
             className="action-btn delete-btn" 
-            disabled={!selectedFile || isUploading}
+            disabled={!selectedFile || isUploading || isLoading}
             onClick={handleFileDelete}
           >
             🗑️ Delete
           </button>
+          
+          {selectedFile && (
+            <button 
+              className="action-btn download-btn" 
+              onClick={() => handleFileDownload(selectedFile)}
+              disabled={isUploading || isLoading}
+            >
+              ⬇️ Download
+            </button>
+          )}
         </div>
       </div>
       
@@ -105,27 +205,47 @@ const SharedFolder = () => {
           <span className="col-date">Modified</span>
         </div>
         
-        <div className="files-list">
-          {files.map(file => (
-            <div 
-              key={file.id} 
-              className={`file-item ${selectedFile?.id === file.id ? 'selected' : ''}`}
-              onClick={() => handleFileSelect(file)}
-            >
-              <span className="col-name">
-                <span className="file-icon">{getFileIcon(file.type)}</span>
-                {file.name}
-              </span>
-              <span className="col-size">{file.size}</span>
-              <span className="col-date">{file.dateModified}</span>
-            </div>
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="loading-message">Loading files...</div>
+        ) : (
+          <div className="files-list">
+            {files.length === 0 ? (
+              <div className="empty-folder">No files found in the shared folder</div>
+            ) : (
+              files.map(file => (
+                <div 
+                  key={file.id} 
+                  className={`file-item ${selectedFile?.id === file.id ? 'selected' : ''}`}
+                  onClick={() => handleFileSelect(file)}
+                  onDoubleClick={() => handleFileDownload(file)}
+                >
+                  <span className="col-name">
+                    <span className="file-icon">{getFileIcon(file.type)}</span>
+                    {file.name}
+                  </span>
+                  <span className="col-size">{file.size}</span>
+                  <span className="col-date">{file.dateModified}</span>
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
       
       <div className="folder-footer">
-        <p>Connected to shared VM folder • {files.length} files</p>
-        <button className="refresh-btn" disabled={isUploading}>🔄 Refresh</button>
+        <p>
+          {serverInfo ? 
+            `Connected to shared VM folder • ${files.length} files` : 
+            'Connecting to server...'}
+        </p>
+        <button 
+          className="refresh-btn" 
+          disabled={isUploading || isLoading}
+          onClick={handleRefresh}
+          title="Refresh file list"
+        >
+          🔄 Refresh
+        </button>
       </div>
     </div>
   );

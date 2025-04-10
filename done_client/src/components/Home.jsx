@@ -7,9 +7,6 @@ import './Home.css';
 const Home = () => {
   return (
     <div className="home-container">
-      <header className="home-header">
-        <h1>Virtual Machine Management</h1>
-      </header>
       
       {/* VM Component at the top of the page */}
       <VirtualMachines />
