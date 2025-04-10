@@ -4,6 +4,9 @@
   padding: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   max-width: 350px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .run-test-container h3 {
@@ -16,6 +19,7 @@
 
 .test-options {
   margin-bottom: 20px;
+  flex-grow: 1;
 }
 
 .option-item {

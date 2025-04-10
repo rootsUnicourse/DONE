@@ -24,14 +24,19 @@
 .content-layout {
   display: flex;
   gap: 30px;
+  align-items: stretch;
 }
 
 .left-panel {
   flex: 0 0 350px; /* Fixed width for the left panel */
+  display: flex;
+  flex-direction: column;
 }
 
 .right-panel {
   flex: 1; /* Takes the remaining space */
+  display: flex;
+  flex-direction: column;
 }
 
 .home-info-panel {
@@ -63,4 +68,20 @@
     width: 100%;
     margin-bottom: 20px;
   }
+}
+
+.location-details p {
+  margin: 10px 0;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.location-details p:last-child {
+  border-bottom: none;
+}
+
+.location-details strong {
+  color: #333;
+  display: inline-block;
+  width: 120px;
 } 
