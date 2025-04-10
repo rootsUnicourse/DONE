@@ -2,6 +2,24 @@
   padding: 20px;
 }
 
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  border: 1px solid #ef9a9a;
+}
+
+.loading-indicator {
+  background-color: #e3f2fd;
+  color: #1565c0;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  border: 1px solid #90caf9;
+}
+
 .vm-grid {
   display: flex;
   flex-wrap: wrap;
