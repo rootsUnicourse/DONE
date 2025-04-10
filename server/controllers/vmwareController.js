@@ -11,6 +11,13 @@ const VMWARE_PATHS = {
   }
 };
 
+// VM state constants
+const VM_STATES = {
+  RUNNING: 'running',
+  STOPPED: 'stopped',
+  SUSPENDED: 'suspended'
+};
+
 // Helper function to execute VMware commands
 const executeVMwareCommand = (command, callback) => {
   console.log(`Executing VMware command: ${command}`);
@@ -44,21 +51,44 @@ const vmwareController = {
     if (!vmxPath) {
       return res.status(404).json({ error: `VM '${vmName}' not found. Add it to the VMWARE_PATHS configuration.` });
     }
+
+    // First check if the VM is already running
+    const checkCommand = `& "${VMWARE_PATHS.vmrun}" list`;
     
-    // Command to start a VM using VMware
-    const command = `& "${VMWARE_PATHS.vmrun}" start "${vmxPath}"`;
-    
-    executeVMwareCommand(command, (error, result) => {
-      if (error) {
+    executeVMwareCommand(checkCommand, (checkError, checkResult) => {
+      if (checkError) {
         return res.status(500).json({ 
-          error: 'Failed to start VM',
-          details: error.message
+          error: 'Failed to check VM status',
+          details: checkError.message
         });
       }
       
-      res.json({ 
-        message: `VM '${vmName}' started successfully`,
-        result
+      const isRunning = checkResult.includes(vmxPath);
+      
+      if (isRunning) {
+        // VM is already running, just return success
+        return res.json({ 
+          message: `VM '${vmName}' is already running`,
+          result: "VM is already powered on"
+        });
+      }
+      
+      // VM is not running, start it with GUI mode
+      // This will automatically handle suspended VMs properly
+      const startCommand = `& "${VMWARE_PATHS.vmrun}" start "${vmxPath}" gui`;
+      
+      executeVMwareCommand(startCommand, (startError, startResult) => {
+        if (startError) {
+          return res.status(500).json({ 
+            error: 'Failed to start VM',
+            details: startError.message
+          });
+        }
+        
+        res.json({ 
+          message: `VM '${vmName}' started successfully`,
+          result: startResult
+        });
       });
     });
   },
@@ -77,20 +107,43 @@ const vmwareController = {
       return res.status(404).json({ error: `VM '${vmName}' not found. Add it to the VMWARE_PATHS configuration.` });
     }
     
-    // Command to stop a VM using VMware
-    const command = `& "${VMWARE_PATHS.vmrun}" stop "${vmxPath}"`;
+    // Check if the VM is running first
+    const checkCommand = `& "${VMWARE_PATHS.vmrun}" list`;
     
-    executeVMwareCommand(command, (error, result) => {
-      if (error) {
+    executeVMwareCommand(checkCommand, (checkError, checkResult) => {
+      if (checkError) {
         return res.status(500).json({ 
-          error: 'Failed to stop VM',
-          details: error.message
+          error: 'Failed to check VM status',
+          details: checkError.message
         });
       }
       
-      res.json({ 
-        message: `VM '${vmName}' stopped successfully`,
-        result
+      const isRunning = checkResult.includes(vmxPath);
+      
+      if (!isRunning) {
+        // VM is already stopped
+        return res.json({ 
+          message: `VM '${vmName}' is already stopped`,
+          result: "VM is not running"
+        });
+      }
+      
+      // Use poweroff command without any parameters
+      console.log(`Powering off VM: ${vmName}`);
+      const poweroffCommand = `& "${VMWARE_PATHS.vmrun}" poweroff "${vmxPath}"`;
+      
+      executeVMwareCommand(poweroffCommand, (poweroffError, poweroffResult) => {
+        if (poweroffError) {
+          return res.status(500).json({ 
+            error: 'Failed to power off VM',
+            details: poweroffError.message
+          });
+        }
+        
+        res.json({ 
+          message: `VM '${vmName}' powered off successfully`,
+          result: poweroffResult
+        });
       });
     });
   },
